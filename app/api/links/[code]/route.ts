@@ -1,26 +1,30 @@
 import { NextResponse } from "next/server";
-import sql from "@/lib/db";
+import {sql} from "@/lib/db"
 
-// GET a single link
-export async function GET(req: Request) {
-  const code = new URL(req.url).pathname.split("/").pop();
+// GET /api/links/:code — stats for a single link
+export async function GET(_: Request, { params }: any) {
+  // 1️⃣ Query the link from database
+  const rows = await sql`SELECT * FROM links WHERE code = ${params.code} LIMIT 1`;
 
-  if (!code) return NextResponse.json({ error: "Code required" }, { status: 400 });
+  // 2️⃣ If not found, return 404
+  if (rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
-  const link = await sql`SELECT * FROM links WHERE code = ${code} LIMIT 1`;
-
-  if (!link[0]) return NextResponse.json({ error: "Link not found" }, { status: 404 });
-
-  return NextResponse.json(link[0]);
+  // 3️⃣ Return the link info
+  return NextResponse.json(rows[0]);
 }
 
-// DELETE a link
-export async function DELETE(req: Request) {
-  const code = new URL(req.url).pathname.split("/").pop();
+// DELETE /api/links/:code — delete a link
+export async function DELETE(_: Request, { params }: any) {
+  // 1️⃣ Delete the row and return the deleted row
+  const res = await sql`DELETE FROM links WHERE code = ${params.code} RETURNING *`;
 
-  if (!code) return NextResponse.json({ error: "Code required" }, { status: 400 });
+  // 2️⃣ If no row deleted, return 404
+  if (res.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
-  await sql`DELETE FROM links WHERE code = ${code}`;
-
+  // 3️⃣ Return success
   return NextResponse.json({ ok: true });
 }

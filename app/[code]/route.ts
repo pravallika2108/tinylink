@@ -1,22 +1,23 @@
-import { NextResponse } from "next/server";
-import sql from "@/lib/db";
+import { sql } from "@/lib/db";
 
-export async function GET(req: Request) {
-  const { pathname } = new URL(req.url);
-  const code = pathname.slice(1); // remove leading "/"
+export async function GET(_: Request, { params }: any) {
+  // 1️⃣ Get the link from the database
+  const rows = await sql`SELECT * FROM links WHERE code = ${params.code} LIMIT 1`;
 
-  const link = await sql`SELECT * FROM links WHERE code = ${code} LIMIT 1`;
-
-  if (!link[0]) {
-    return NextResponse.json({ error: "Link not found" }, { status: 404 });
+  // 2️⃣ If not found, return 404
+  if (rows.length === 0) {
+    return new Response("Not Found", { status: 404 });
   }
 
-  // Update clicks and last_clicked_at
+  const link = rows[0];
+
+  // 3️⃣ Increment clicks and update last_clicked
   await sql`
     UPDATE links
-    SET clicks = clicks + 1, last_clicked_at = now()
-    WHERE code = ${code}
+    SET clicks = clicks + 1, last_clicked = NOW()
+    WHERE code = ${params.code}
   `;
 
-  return NextResponse.redirect(link[0].url, 302);
+  // 4️⃣ Redirect to the original URL
+  return Response.redirect(link.url, 302);
 }

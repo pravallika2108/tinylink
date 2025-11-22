@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    version: "1.0",
-    uptime: process.uptime() // returns server uptime in seconds
-  });
+export function GET() {
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      version: "1.0",
+      timestamp: Date.now()
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
