@@ -1,47 +1,76 @@
-import { NextResponse } from "next/server";
-import  {sql}  from "@/lib/db";
+import { sql } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
-const CODE_REGEX = /^[A-Za-z0-9]{6,8}$/;
-
-export async function POST(req: Request) {
-
-  const { url, code } = await req.json();
-
-
-  try {
-    new URL(url);
-  } catch {
-    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+function generateCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
-  
-  const finalCode =
-    code || Math.random().toString(36).substring(2, 10).slice(0, 6);
-
-  if (code && !CODE_REGEX.test(code)) {
-    return NextResponse.json(
-      { error: "Code must be 6–8 alphanumeric characters" },
-      { status: 400 }
-    );
-  }
-
-
-  try {
-    await sql`
-      INSERT INTO links (code, url)
-      VALUES (${finalCode}, ${url})
-    `;
-  } catch (e) {
-    
-    return NextResponse.json({ error: "Code already exists" }, { status: 409 });
-  }
-
-
-  return NextResponse.json({ code: finalCode, url }, { status: 201 });
+  return code;
 }
 
-// list all links
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { url, code } = body;
+    
+    // Validate URL
+    try {
+      new URL(url);
+    } catch {
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
+    // Generate or validate code
+    let shortCode = code;
+    if (!shortCode) {
+      shortCode = generateCode();
+      // Ensure uniqueness
+      let attempts = 0;
+      while (attempts < 10) {
+        const existing = await sql`SELECT code FROM links WHERE code = ${shortCode}`;
+        if (existing.length === 0) break;
+        shortCode = generateCode();
+        attempts++;
+      }
+    } else {
+      // Validate custom code
+      if (!/^[A-Za-z0-9]{6,8}$/.test(shortCode)) {
+        return NextResponse.json({ error: 'Code must be 6-8 alphanumeric characters' }, { status: 400 });
+      }
+      
+      // Check if code exists
+      const existing = await sql`SELECT code FROM links WHERE code = ${shortCode}`;
+      if (existing.length > 0) {
+        return NextResponse.json({ error: 'Code already exists' }, { status: 409 });
+      }
+    }
+
+    // Insert link
+    const result = await sql`
+      INSERT INTO links (code, target_url, clicks, last_clicked)
+      VALUES (${shortCode}, ${url}, 0, NULL)
+      RETURNING code, target_url, clicks, last_clicked, created_at
+    `;
+
+    return NextResponse.json(result[0], { status: 201 });
+  } catch (error) {
+    console.error('Error creating link:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function GET() {
-  const rows = await sql`SELECT * FROM links ORDER BY created_at DESC`;
-  return NextResponse.json(rows);
+  try {
+    const links = await sql`
+      SELECT code, target_url, clicks, last_clicked, created_at
+      FROM links
+      ORDER BY created_at DESC
+    `;
+    return NextResponse.json(links);
+  } catch (error) {
+    console.error('Error fetching links:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
