@@ -78,74 +78,76 @@ export default function Dashboard() {
     );
   }, [search, links]);
 
-  if (loading) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">TinyLink Dashboard</h1>
+      <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
+        TinyLink Dashboard
+      </h1>
 
       {/* Add Link Form */}
-      <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-2">
+      <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-3 justify-center">
         <input
           type="text"
           placeholder="Long URL"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           required
-          className="p-2 border rounded flex-1"
+          className="p-3 border rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <input
           type="text"
           placeholder="Custom Code (optional)"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          className="p-2 border rounded w-48"
+          className="p-3 border rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <button
           type="submit"
           disabled={submitting}
-          className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
         >
           {submitting ? "Adding..." : "Add Link"}
         </button>
       </form>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+      {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
 
       {/* Search Input */}
-      <div className="mb-4">
+      <div className="mb-4 flex justify-center">
         <input
           type="text"
           placeholder="Search by code or URL..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="p-2 border rounded w-full md:w-96"
+          className="p-3 border rounded-lg w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
 
       {/* Links Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200 rounded table-auto">
+      <div className="overflow-x-auto shadow-lg rounded-lg">
+        <table className="min-w-full border border-gray-200 table-auto">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-2 border-b text-left">Code</th>
-              <th className="p-2 border-b text-left">URL</th>
-              <th className="p-2 border-b text-left">Clicks</th>
-              <th className="p-2 border-b text-left">Last Clicked</th>
-              <th className="p-2 border-b text-left">Actions</th>
+              <th className="p-3 border-b text-left text-gray-700">Code</th>
+              <th className="p-3 border-b text-left text-gray-700">URL</th>
+              <th className="p-3 border-b text-left text-gray-700">Clicks</th>
+              <th className="p-3 border-b text-left text-gray-700">Last Clicked</th>
+              <th className="p-3 border-b text-left text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredLinks.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center">
+                <td colSpan={5} className="p-4 text-center text-gray-500">
                   No links found
                 </td>
               </tr>
             )}
             {filteredLinks.map((link) => (
               <tr key={link.code} className="hover:bg-gray-50">
-                <td className="p-2 border-b">{link.code}</td>
-                <td className="p-2 border-b truncate max-w-xs" title={link.url}>
+                <td className="p-3 border-b font-medium">{link.code}</td>
+                <td className="p-3 border-b truncate max-w-xs" title={link.url}>
                   <a
                     href={link.url}
                     target="_blank"
@@ -155,26 +157,18 @@ export default function Dashboard() {
                     {link.url}
                   </a>
                 </td>
-                <td className="p-2 border-b">{link.clicks}</td>
-                <td className="p-2 border-b">
+                <td className="p-3 border-b">{link.clicks}</td>
+                <td className="p-3 border-b">
                   {link.last_clicked
                     ? new Date(link.last_clicked).toLocaleString()
                     : "-"}
                 </td>
-                <td className="p-2 border-b flex gap-2">
+                <td className="p-3 border-b">
                   <button
                     onClick={() => handleDelete(link.code)}
-                    className="text-red-500 hover:underline"
+                    className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
                   >
                     Delete
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigator.clipboard.writeText(`${window.location.origin}/${link.code}`)
-                    }
-                    className="text-green-500 hover:underline"
-                  >
-                    Copy Link
                   </button>
                 </td>
               </tr>
