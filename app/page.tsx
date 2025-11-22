@@ -286,9 +286,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <footer className="text-center text-gray-600 text-sm">
-          <p>© 2024 TinyLink. Built with Next.js and Neon Postgres.</p>
-        </footer>
+      
       </div>
     </div>
   );
